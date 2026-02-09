@@ -1,6 +1,6 @@
 {
   "name": "@jazario/n8n-nodes-opencodev2",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "n8n community node for OpenCode AI chat model integration",
   "keywords": [
     "n8n-community-node-package",
@@ -59,7 +59,7 @@
     "jest": "^29.7.0",
     "n8n-workflow": "^1.120.8",
     "prettier": "^3.2.0",
-    "ts-jest": "^29.1.0",
+    "ts-jest": "^29.4.6",
     "ts-node": "^10.9.0",
     "typescript": "^5.3.0"
   },
