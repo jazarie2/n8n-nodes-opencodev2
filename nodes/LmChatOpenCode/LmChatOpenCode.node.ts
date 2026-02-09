@@ -194,11 +194,44 @@ export class LmChatOpenCode implements INodeType {
       /**
        * Fetches available agents from OpenCode API.
        * Transforms the agents array into dropdown options.
-       * Returns empty array if server is unreachable.
+       * Returns default OpenCode agents if server is unreachable.
+       *
+       * Built-in OpenCode agents:
+       * - build: Default agent with all tools enabled for development work
+       * - plan: Restricted agent for planning/analysis, no file edits
+       * - general: General-purpose subagent for research and multi-step tasks
+       * - explore: Fast read-only subagent for codebase exploration
        */
       async getAgents(
         this: ILoadOptionsFunctions,
       ): Promise<INodePropertyOptions[]> {
+        // Default OpenCode agents as fallback
+        const defaultAgents: INodePropertyOptions[] = [
+          {
+            name: "Build (Default)",
+            value: "build",
+            description:
+              "Primary agent with all tools enabled for development work",
+          },
+          {
+            name: "Plan",
+            value: "plan",
+            description:
+              "Restricted agent for planning and analysis, no file edits allowed",
+          },
+          {
+            name: "General",
+            value: "general",
+            description:
+              "General-purpose subagent for research and multi-step tasks",
+          },
+          {
+            name: "Explore",
+            value: "explore",
+            description: "Fast read-only subagent for codebase exploration",
+          },
+        ];
+
         const credentials = await this.getCredentials("openCodeApi");
         const baseUrl =
           (credentials?.baseUrl as string) || "http://127.0.0.1:4096";
@@ -213,20 +246,24 @@ export class LmChatOpenCode implements INodeType {
 
           // Transform agents array to options
           // Response is array of objects with 'name' field
-          return response
+          const agents = response
+            .filter((agent: any) => !agent.hidden) // Filter out hidden system agents
             .map((agent: any) => ({
               name: agent.name.charAt(0).toUpperCase() + agent.name.slice(1),
               value: agent.name,
+              description: agent.description || "",
             }))
             .sort((a: INodePropertyOptions, b: INodePropertyOptions) =>
               a.name.localeCompare(b.name),
             );
+
+          return agents.length > 0 ? agents : defaultAgents;
         } catch (error) {
           console.warn(
-            "Failed to load agents from OpenCode:",
+            "Failed to load agents from OpenCode, using defaults:",
             error instanceof Error ? error.message : String(error),
           );
-          return [];
+          return defaultAgents;
         }
       },
 
