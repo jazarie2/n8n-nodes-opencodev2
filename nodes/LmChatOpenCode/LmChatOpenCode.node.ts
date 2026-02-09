@@ -74,6 +74,42 @@ export class LmChatOpenCode implements INodeType {
         },
       },
       {
+        displayName: "Session Mode",
+        name: "sessionMode",
+        type: "options",
+        default: "ephemeral",
+        description:
+          "Controls how OpenCode sessions are managed. Ephemeral creates and destroys a session per call. Persistent reuses an existing session ID.",
+        options: [
+          {
+            name: "Ephemeral (Default)",
+            value: "ephemeral",
+            description:
+              "Create a new session for each call and delete it after. Stateless.",
+          },
+          {
+            name: "Persistent",
+            value: "persistent",
+            description:
+              "Reuse an existing OpenCode session ID. The session is NOT deleted after each call.",
+          },
+        ],
+      },
+      {
+        displayName: "Session ID",
+        name: "sessionId",
+        type: "string",
+        default: "",
+        description:
+          "The OpenCode session ID to reuse. Supports expressions (e.g. {{ $json.sessionId }}). Leave empty to auto-create a persistent session that lives for the workflow execution.",
+        placeholder: "e.g. ses_abc123 or {{ $json.sessionId }}",
+        displayOptions: {
+          show: {
+            sessionMode: ["persistent"],
+          },
+        },
+      },
+      {
         displayName: "Options",
         name: "options",
         type: "collection",
@@ -250,6 +286,15 @@ export class LmChatOpenCode implements INodeType {
     const agent = this.getNodeParameter("agent", itemIndex) as string;
     const providerID = this.getNodeParameter("providerID", itemIndex) as string;
     const modelID = this.getNodeParameter("modelID", itemIndex) as string;
+    const sessionMode = this.getNodeParameter(
+      "sessionMode",
+      itemIndex,
+      "ephemeral",
+    ) as string;
+    const sessionId =
+      sessionMode === "persistent"
+        ? (this.getNodeParameter("sessionId", itemIndex, "") as string)
+        : undefined;
     const options = this.getNodeParameter("options", itemIndex, {}) as {
       baseUrl?: string;
       temperature?: number;
@@ -270,6 +315,8 @@ export class LmChatOpenCode implements INodeType {
       modelID,
       temperature: options.temperature,
       maxTokens: options.maxTokens !== -1 ? options.maxTokens : undefined,
+      sessionMode: sessionMode as "ephemeral" | "persistent",
+      sessionId: sessionId || undefined,
     });
 
     return {

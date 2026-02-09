@@ -1,5 +1,5 @@
 {
-  "name": "n8n-nodes-opencode",
+  "name": "n8n-nodes-opencodev2",
   "version": "1.0.0",
   "description": "n8n community node for OpenCode AI chat model integration",
   "keywords": [
@@ -11,14 +11,14 @@
     "langchain"
   ],
   "license": "MIT",
-  "homepage": "https://github.com/ssccio/n8n-nodes-opencode",
+  "homepage": "https://github.com/jazarie2/n8n-nodes-opencodev2",
   "author": {
     "name": "Ken Trenkelbach",
     "email": "ken@sscc.io"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ssccio/n8n-nodes-opencode.git"
+    "url": "git+https://github.com/jazarie2/n8n-nodes-opencodev2.git"
   },
   "main": "index.js",
   "scripts": {
@@ -49,13 +49,15 @@
     ]
   },
   "devDependencies": {
-    "@types/jest": "^29.5.0",
-    "@types/node": "^20.11.0",
+    "@langchain/core": "^1.1.19",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^20.19.33",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "eslint": "^8.56.0",
     "eslint-plugin-n8n-nodes-base": "^1.16.1",
     "jest": "^29.7.0",
+    "n8n-workflow": "^1.120.8",
     "prettier": "^3.2.0",
     "ts-jest": "^29.1.0",
     "ts-node": "^10.9.0",
@@ -63,8 +65,5 @@
   },
   "peerDependencies": {
     "n8n-workflow": "*"
-  },
-  "dependencies": {
-    "@langchain/core": "^0.3.28"
   }
 }

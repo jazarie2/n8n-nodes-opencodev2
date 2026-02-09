@@ -16,6 +16,8 @@ export interface OpenCodeChatModelInput extends BaseChatModelParams {
   modelID?: string;
   temperature?: number;
   maxTokens?: number;
+  sessionMode?: "ephemeral" | "persistent";
+  sessionId?: string;
 }
 
 interface OpenCodeSession {
@@ -44,6 +46,9 @@ export class OpenCodeChatModel extends BaseChatModel {
   modelID = "claude-3-5-sonnet-20241022";
   temperature?: number;
   maxTokens?: number;
+  sessionMode: "ephemeral" | "persistent" = "ephemeral";
+  sessionId?: string;
+  private persistentSessionId?: string; // Tracks auto-created persistent session
   private requestTimeout = 30000; // 30 second timeout for API requests
 
   constructor(fields: OpenCodeChatModelInput) {
@@ -75,6 +80,8 @@ export class OpenCodeChatModel extends BaseChatModel {
     this.modelID = modelID;
     this.temperature = fields.temperature;
     this.maxTokens = fields.maxTokens;
+    this.sessionMode = fields.sessionMode ?? "ephemeral";
+    this.sessionId = fields.sessionId;
   }
 
   _llmType(): string {
@@ -104,10 +111,27 @@ export class OpenCodeChatModel extends BaseChatModel {
     runManager?: CallbackManagerForLLMRun,
   ): Promise<ChatResult> {
     let sessionId: string | undefined;
+    let sessionOwned = false; // Whether we created the session and should clean it up
 
     try {
-      // Create fresh session for this execution
-      sessionId = await this.createSession();
+      if (this.sessionMode === "persistent") {
+        if (this.sessionId) {
+          // User provided an explicit session ID — reuse it directly
+          sessionId = this.sessionId;
+        } else {
+          // No session ID provided — auto-create one and reuse across calls
+          if (!this.persistentSessionId) {
+            this.persistentSessionId = await this.createSession();
+          }
+          sessionId = this.persistentSessionId;
+        }
+        // Persistent sessions are NOT deleted after each call
+        sessionOwned = false;
+      } else {
+        // Ephemeral mode: create fresh session, delete after use
+        sessionId = await this.createSession();
+        sessionOwned = true;
+      }
 
       // Convert messages to OpenCode prompt format
       const promptParts = this.convertMessagesToPromptParts(messages);
@@ -129,8 +153,8 @@ export class OpenCodeChatModel extends BaseChatModel {
         ],
       };
     } finally {
-      // Clean up session after execution if one was created
-      if (sessionId) {
+      // Only clean up ephemeral sessions (ones we own)
+      if (sessionOwned && sessionId) {
         await this.deleteSession(sessionId);
       }
     }
@@ -217,7 +241,7 @@ export class OpenCodeChatModel extends BaseChatModel {
           } else if (item.type === "text") {
             parts.push({
               type: "text",
-              text: item.text,
+              text: item.text as string,
             });
           }
           // Could add support for image_url and other types here
@@ -356,8 +380,12 @@ export class OpenCodeChatModel extends BaseChatModel {
     }
   }
 
-  // Deprecated: Kept for backward compatibility, but no longer needed
+  // Clean up persistent session if one was auto-created
+  // Call this when the workflow execution is complete
   async cleanup(): Promise<void> {
-    // Sessions are now cleaned up automatically per-execution
+    if (this.persistentSessionId) {
+      await this.deleteSession(this.persistentSessionId);
+      this.persistentSessionId = undefined;
+    }
   }
 }
